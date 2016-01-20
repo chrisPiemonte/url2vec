@@ -3,6 +3,7 @@ __author__ = 'chris'
 import igraph as ig
 import plotly.plotly as py
 from plotly.graph_objs import *
+import plotly.graph_objs as go
 
 def gplot(graph, graph_name):
     py.sign_in('chrispol', 'yvg1d17o5q')
@@ -97,3 +98,25 @@ def gplot(graph, graph_name):
     fig = Figure(data=data, layout=layout)
     return fig
     # py.iplot(fig, filename=graph_name)
+    
+
+def sc_plot(two_dim_vecs, word_labels=None, colors="#FFFF00"):
+    py.sign_in('chrispol', 'yvg1d17o5q')
+    
+    x_coord = two_dim_vecs[:, 0]
+    y_coord = two_dim_vecs[:, 1]
+    
+    trace = go.Scattergl(
+        x = x_coord, #
+        y = y_coord, #
+        mode = 'markers',
+        text = word_labels, #
+        marker = dict(
+            color = colors,
+            line = dict(width = 1)
+        )
+    )
+
+    data = [trace]
+    return data
+

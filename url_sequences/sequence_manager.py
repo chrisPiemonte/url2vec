@@ -1,91 +1,71 @@
-__author__ = 'chris'
-
 import igraph as ig
 import plotly.plotly as py
 from plotly.graph_objs import *
+import nltk
+from nltk.stem.snowball import SnowballStemmer
 
-
-rem_back_n = lambda coll: coll[-1].rstrip() if len(coll) > 0 else coll
-rem_last = lambda coll: coll[:-1] if len(coll) > 0 else coll
-split_line = lambda line, sep: line.split(sep)
+to_dict       = lambda line, sep: get_key_value(split_line(line, sep))
 get_key_value = lambda line_list: {line_list[1].rstrip(): line_list[0]}
-get_url_index = lambda url_code: url_code.replace("u_", "")
-
-to_dict = lambda line, sep: get_key_value(split_line(line, sep))
-to_tuple =  lambda line, sep: tuple(rem_back_n(split_line(line, sep)))
 
 
+# -----------------------------------------------------------------------------------------------------------
 
-def get_sequence_map(filename):
-    url_dict = {}
+
+""" Lambdas """
+clean         = lambda string: string.strip()
+split_line    = lambda line, sep: line.split(sep)
+take_part     = lambda num_part, line, sep: clean(split_line(line, sep)[num_part])
+to_tuple      = lambda line, sep: tuple(rem_back_n(split_line(line, sep)))
+rem_back_n    = lambda coll: coll[-1].rstrip() if len(coll) > 0 else coll
+remove_last   = lambda coll: coll[:-1] if len(coll) > 0 else coll
+get_url_index = lambda url_code: int(url_code.replace("u_", ""))
+
+
+""" Functions """
+# returns the url map -> {code: url}
+def get_urlmap(filename, sep=","):
+    return {take_part(1, line, sep): take_part(0, line, sep) for line in open(filename, "r")}
+
+
+# returns the membership map -> {code: membership} manually clusterized
+def get_membership_map(filename, sep=" , "):
+    return {take_part(1, line, sep): take_part(2, line, sep) for line in open(filename, "r")}
+
+
+# returns the tuple list -> (url, code, membership) manually clusterized
+def get_sequences_with_membership(filename, sep=" , "):
+    return [(to_tuple(line, sep)) for line in open(filename, "r")]
+
+# returns generator of sequences
+def get_sequences(filename, sep=" -1 ", min_len=1):
     for line in open(filename, "r"):
-        tup = line.split(" , ")
-        url_dict[tup[1].rstrip()] = tup[0]
-    return url_dict
-
-
-# same with lambda
-def get_seq_map(filename):
-    url_dict = {}
-    [url_dict.update(to_dict(line, " , ")) for line in open(filename, "r")]
-    return url_dict
-
-
-def get_sequence_tuple_list(filename):
-    url_list = []
-    for line in open(filename, "r"):
-        elements = line.split(" , ")
-        elements[-1] = elements[-1].rstrip()
-        url_list.append(tuple(elements))
-    return url_list
-
-
-# same with lambda
-def get_seq_tuple_list(filename):
-    url_list = []
-    [url_list.append(to_tuple(line, " , ")) for line in open(filename, "r")]
-    return url_list
-
-
-def get_sequences(filename, min_len=1):
-    for line in open(filename, "r"):
-        sequence = line.split(" -1 ")
-        sequence.pop(len(sequence)-1)
+        sequence = remove_last(split_line(line, sep))
         if len(sequence) >= min_len:
             yield sequence
 
-
-# same with lambda
-def get_seq(filename, min_len=1):
-    for line in open(filename, "r"):
-        sequence = rem_last(split_line(line, " -1 "))
-        if len(sequence) >= min_len:
-            yield sequence
-
-
-# useless         
-def get_labels(sequenceMap):
-    labels = [None] * len(sequenceMap)
-    for key in sequenceMap:
-        i = int(key.replace("u_", ""))
-        labels[i] = sequenceMap[key]
-    return labels
-
-
+#
 def get_color(n):
-    # arancione, bianco, giallo, azzurro, verde, blu, fucsia, viola
+    #        1.orange,   2.white,   3.yellow, 4.lgt-blue, 5.green,  6.blue,    7.fuchsia, 8.violet
     colors = ["#FF8F00", "#FFFFFF", "#FFFF00", "#00E5FF", "#76FF03", "#2979FF", "#F50057", "#9C27B0"]
-    return colors[n]
+    color = ""
+    if n < 0:
+        color = "#009688" # noise
+    elif n < len(colors):
+        color = colors[n]
+    else:
+        color = "#" + format(n**5, '06X')
+    return color
 
 
-def create_graph(sequences, seqMap):
-    graph = ig.Graph(directed=False)
+# returns the web graph (igraph's graph object)
+def create_graph(sequences, seqMap, is_directed=False):
+    graph = ig.Graph(directed=is_directed)
     graph.add_vertices(len(seqMap))  # adding nodes
     
     if type(seqMap) is dict:
         for key in seqMap:
-            i = int(key.replace("u_", ""))
-            graph.vs[i]["name"] = seqMap[key]  # adding labels
+            i = get_url_index(key)
+            graph.vs[i]["name"] = seqMap[key]  # adding longurl
             graph.vs[i]["color"] = "#2979FF"
     
     elif type(seqMap) is list:
@@ -97,8 +77,32 @@ def create_graph(sequences, seqMap):
         
     for seq in sequences:
         for i in range(len(seq)-1):
-            source = int(seq[i].replace("u_", ""))
-            target = int(seq[i+1].replace("u_", ""))
-            if graph.get_eid(source, target, directed=True, error=False) == -1:
+            source = get_url_index(seq[i])
+            target = get_url_index(seq[i+1])
+            if graph.get_eid(source, target, directed=is_directed, error=False) == -1:
                 graph.add_edge(source, target)  # adding unique edges
-    return graph
+    return graph 
+
+
+""" Document Clustering """
+
+tokenize      = lambda text: text.split(" ")
+stem          = lambda token, stemmer: stemmer.stem(token)
+
+# returns the content map -> {code: content} content is a string
+def get_content_map(filename, sep="	"):
+    return {take_part(0, line, sep): take_part(1, line, sep) for line in open(filename)}
+
+# returns a map of -> {code, tokenized_content} tokenized_content is a list
+def to_tokens_map(content_map):
+    return {key: tokenize(content_map[key]) for key in content_map}
+
+# returns a map of ->  {code, stemmed_content} stemmed_content is a list
+def to_stems_map(content_map, stemmer):
+    return {key: [stem(token, stemmer) for token in tokenize(content_map[key])] for key in content_map}
+
+# merges all the lists in one vocabulary
+def get_total_vocab(tokens_map):
+    return [token for key in tokens_map for content in tokens_map[key] for token in content]
+
+    

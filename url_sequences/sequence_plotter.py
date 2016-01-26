@@ -6,20 +6,8 @@ from plotly.graph_objs import *
 import plotly.graph_objs as go
 
 
-def get_colors(n):
-    # 1.arancione, 2.bianco, 3.giallo, 4.azzurro, 5.verde, 6.blu, 7.fucsia, 8.viola
-    colors = ["#FF8F00", "#FFFFFF", "#FFFF00", "#00E5FF", "#76FF03", "#2979FF", "#F50057", "#9C27B0"]
-    c = ""
-    if n < 0:
-        c = "#009688"
-    elif n < len(colors):
-        c = colors[n]
-    else:
-        c = "#" + format(n**5, '06X')
-    return c
 
-
-def gplot(graph, graph_name):
+def graph_plot(graph, graph_name):
     py.sign_in('chrispolo', '89nned6csl')
     layt = graph.layout('kk', dim=3)
     
@@ -114,7 +102,7 @@ def gplot(graph, graph_name):
     # py.iplot(fig, filename=graph_name)
     
 
-def sc_plot(two_dim_vecs, word_labels=None, colors="#FFFF00"):
+def scatter_plot(two_dim_vecs, word_labels=None, colors="#FFFF00"):
     py.sign_in('chrispolo', '89nned6csl')
     
     x_coord = two_dim_vecs[:, 0]

@@ -1,0 +1,9 @@
+nltk
+jupyter
+numpy
+scikit-learn
+pandas
+python-igraph
+plotly
+gensim
+hdbscan

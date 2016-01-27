@@ -3,3 +3,4 @@ url_sequences/*.pyc
 dataset/depth-100k
 dataset/depth-500k
 dataset/depth-1M
+url_sequences/__pycache__/

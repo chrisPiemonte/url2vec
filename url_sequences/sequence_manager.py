@@ -86,8 +86,9 @@ def create_graph(sequences, seqMap, is_directed=False):
 
 """ Document Clustering """
 
-tokenize      = lambda text: text.split(" ")
-stem          = lambda token, stemmer: stemmer.stem(token)
+tokenize          = lambda text: text.split(" ")
+stem              = lambda token, stemmer=SnowballStemmer("english"): stemmer.stem(token)
+tokenize_and_stem = lambda text, stemmer=SnowballStemmer("english"): [stem(token, stemmer) for token in tokenize(text)]
 
 # returns the content map -> {code: content} content is a string
 def get_content_map(filename, sep="	"):
@@ -98,11 +99,12 @@ def to_tokens_map(content_map):
     return {key: tokenize(content_map[key]) for key in content_map}
 
 # returns a map of ->  {code, stemmed_content} stemmed_content is a list
-def to_stems_map(content_map, stemmer):
-    return {key: [stem(token, stemmer) for token in tokenize(content_map[key])] for key in content_map}
+def to_stems_map(content_map, stemmer=SnowballStemmer("english")):
+    #return {key: [stem(token, stemmer) for token in tokenize(content_map[key])] for key in content_map}
+    return {key: tokenize_and_stem(content_map[key]) for key in content_map}
 
 # merges all the lists in one vocabulary
 def get_total_vocab(tokens_map):
-    return [token for key in tokens_map for content in tokens_map[key] for token in content]
+    return [token for key in tokens_map for token in tokens_map[key]]
 
     

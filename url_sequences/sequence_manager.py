@@ -96,7 +96,7 @@ def get_content_map(filename, sep="	"):
 
 # returns a map of -> {code, tokenized_content} tokenized_content is a list
 def to_tokens_map(content_map):
-    return {key: tokenize(content_map[key]) for key in content_map}
+    return {key: tokenize(content_map[key]) for key in content_map} # very pythonic indeed
 
 # returns a map of ->  {code, stemmed_content} stemmed_content is a list
 def to_stems_map(content_map, stemmer=SnowballStemmer("english")):

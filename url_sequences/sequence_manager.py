@@ -117,7 +117,6 @@ class RealMembership:
         for line in open(fpath, "r"):
             kv = line.split(sep)
             utm_map[kv[0]] = kv[1].strip()
-            print(kv)
         self.url_membership_map = utm_map
         
     def get_membership(self, url):
@@ -131,5 +130,8 @@ class RealMembership:
         except KeyError:
             print("--url not found--")
         return ret
+    
+    def get_labelset(self):
+        return set(self.url_membership_map.values())
 
     

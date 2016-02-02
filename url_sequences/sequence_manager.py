@@ -107,4 +107,29 @@ def to_stems_map(content_map, stemmer=SnowballStemmer("english")):
 def get_total_vocab(tokens_map):
     return [token for key in tokens_map for token in tokens_map[key]]
 
+# -----------------------------------------------------------------------------------------------------------
+
+class RealMembership:
+    filepath = "/home/chris/workspace/jupyter-notebook/url2vec/dataset/manual-membership/urlToMembership.txt"
+    
+    def __init__(self, fpath=filepath, sep=","):
+        utm_map = {}
+        for line in open(fpath, "r"):
+            kv = line.split(sep)
+            utm_map[kv[0]] = kv[1].strip()
+            print(kv)
+        self.url_membership_map = utm_map
+        
+    def get_membership(self, url):
+        ret = "-1"
+        if url.startswith("https"):
+            url = url.replace("https", "http")
+        if not url.endswith("/"):
+            url += "/"
+        try:
+            ret = self.url_membership_map[url]
+        except KeyError:
+            print("--url not found--")
+        return ret
+
     

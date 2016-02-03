@@ -3,6 +3,7 @@ import plotly.plotly as py
 from plotly.graph_objs import *
 import nltk
 from nltk.stem.snowball import SnowballStemmer
+import os
 
 to_dict       = lambda line, sep: get_key_value(split_line(line, sep))
 get_key_value = lambda line_list: {line_list[1].rstrip(): line_list[0]}
@@ -110,7 +111,8 @@ def get_total_vocab(tokens_map):
 # -----------------------------------------------------------------------------------------------------------
 
 class RealMembership:
-    filepath = "/home/chris/workspace/jupyter-notebook/url2vec/dataset/manual-membership/urlToMembership.txt"
+    filepath = os.getcwd() + "/../dataset/manual-membership/urlToMembership.txt"
+    print("Path of real membership file: ", filepath)
     
     def __init__(self, fpath=filepath, sep=","):
         utm_map = {}

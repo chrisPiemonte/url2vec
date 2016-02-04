@@ -111,7 +111,8 @@ def get_total_vocab(tokens_map):
 # -----------------------------------------------------------------------------------------------------------
 
 class RealMembership:
-    filepath = os.getcwd() + "/../dataset/manual-membership/urlToMembership.txt"
+    filepath = os.path.abspath(os.path.dirname(__file__)) + "/../dataset/manual-membership/urlToMembership.txt"
+    
     print("Path of real membership file: ", filepath)
     
     def __init__(self, fpath=filepath, sep=","):
@@ -130,7 +131,7 @@ class RealMembership:
         try:
             ret = self.url_membership_map[url]
         except KeyError:
-            print("--url not found--")
+            print("Url not found")
         return ret
     
     def get_labelset(self):

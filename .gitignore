@@ -1,6 +1,6 @@
 .ipynb_checkpoints
-url_sequences/*.pyc
+util/*.pyc
 dataset/depth-100k
 dataset/depth-500k
 dataset/depth-1M
-url_sequences/__pycache__/
+util/__pycache__/

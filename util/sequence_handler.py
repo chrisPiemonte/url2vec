@@ -3,7 +3,7 @@ __author__ = 'chris'
 import igraph as ig
 import plotly.plotly as py
 from plotly.graph_objs import *
-from url_sequences.sequence_manager import *
+from util.sequence_manager import *
 
 
 rem_back_n = lambda coll: coll[-1].rstrip() if len(coll) > 0 else coll

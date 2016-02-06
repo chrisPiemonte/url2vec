@@ -4,3 +4,6 @@ dataset/depth-100k
 dataset/depth-500k
 dataset/depth-1M
 util/__pycache__/
+build
+model/__pycache__/
+model/*.pyc

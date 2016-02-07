@@ -1,9 +1,11 @@
 .ipynb_checkpoints
-util/*.pyc
+urlembed/__pycache__/
+urlembed/*.pyc
+urlembed/util/__pycache__/
+urlembed/util/*.pyc
+urlembed/model/__pycache__/
+urlembed/model/*.pyc
 dataset/depth-100k
 dataset/depth-500k
 dataset/depth-1M
-util/__pycache__/
 build
-model/__pycache__/
-model/*.pyc

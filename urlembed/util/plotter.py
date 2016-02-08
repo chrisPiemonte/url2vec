@@ -7,23 +7,23 @@ import plotly.graph_objs as go
 
 
 
-def graph_plot(graph, graph_name):
+def graph3d_plot(graph, graph_name="graph"):
     py.sign_in('chrispolo', '89nned6csl')
     layt = graph.layout('kk', dim=3)
-    
+
     Xn = [layt[k][0] for k in range(len(graph.vs))] # x-coordinates of nodes
     Yn = [layt[k][1] for k in range(len(graph.vs))] # y-coordinates of nodes
     Zn = [layt[k][2] for k in range(len(graph.vs))] # z-coordinates of nodes
     Xe = []
-    
+
     Ye = []
     Ze = []
-    
+
     for e in graph.es:
         Xe += [layt[e.source][0], layt[e.target] [0], None] # x-coordinates of edge ends
         Ye += [layt[e.source][1], layt[e.target] [1], None] # y-coordinates of edge ends
         Ze += [layt[e.source][2], layt[e.target] [2], None] # z-coordinates of edge ends
-    
+
     trace1 = Scatter3d(
         x = Xe,
         y = Ye,
@@ -35,11 +35,11 @@ def graph_plot(graph, graph_name):
         ),
         hoverinfo = 'none'
     )
-    
+
     trace2 = Scatter3d(
         x = Xn,
         y = Yn,
-        z = Zn,  
+        z = Zn,
         mode = 'markers',
         name = 'actors',
         marker = Marker(
@@ -55,7 +55,7 @@ def graph_plot(graph, graph_name):
         text = graph.vs["name"],
         hoverinfo = 'text'
     )
-    
+
     axis = dict(
         showbackground = False,
         showline = False,
@@ -64,7 +64,7 @@ def graph_plot(graph, graph_name):
         showticklabels = False,
         title = ''
     )
-    
+
     layout = Layout(
         title = graph_name,
         width = 1000,
@@ -95,19 +95,19 @@ def graph_plot(graph, graph_name):
                 )
         ]),
     )
-    
+
     data = Data([trace1, trace2])
     fig = Figure(data=data, layout=layout)
     return fig
     # py.iplot(fig, filename=graph_name)
-    
+
 
 def scatter_plot(two_dim_vecs, word_labels=None, colors="#FFFF00"):
     py.sign_in('chrispolo', '89nned6csl')
-    
+
     x_coord = two_dim_vecs[:, 0]
     y_coord = two_dim_vecs[:, 1]
-    
+
     trace = go.Scattergl(
         x = x_coord, #
         y = y_coord, #
@@ -121,4 +121,3 @@ def scatter_plot(two_dim_vecs, word_labels=None, colors="#FFFF00"):
 
     data = [trace]
     return data
-

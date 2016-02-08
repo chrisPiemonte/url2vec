@@ -9,7 +9,7 @@ from sklearn.cluster import KMeans
 from hdbscan import HDBSCAN
 from gensim.models import Word2Vec
 
-from urlembed.util.sequence_manager import *
+from urlembed.util.seqmanager import tokenize_and_stem
 
 class Url2Vec:
 
@@ -18,31 +18,27 @@ class Url2Vec:
         # assert (type(codeurl_map) is dict), "url2vec needs a map that associates a code(e.g. a number) for each URL"
         self.labels_ = None
         # assume is list-like or fail gracefully
-        self.codeurl_map = codeurl_map if type(codeurl_map) is dict else {str(x): codeurl_map[x] for x in range(len(codeurl_map))}
+        self.codeurl_map = codeurl_map if type(codeurl_map) is dict else { str(x): codeurl_map[x] for x in range(len(codeurl_map)) }
 
 
     # matching matrix
-    def __get_confusion_table(self, ground_truth, clusters_found_labels):
+    def __get_confusion_table(self, ground_truth, predicted_labels):
+        assert len(ground_truth) == len(predicted_labels), "Invalid input arguments"
+        assert len(ground_truth) > 0, "Invalid input arguments"
         assert isinstance(ground_truth[0], int), "Type is not int"
-        assert isinstance(clusters_found_labels[0], int), "Type is not int"
+        assert isinstance(predicted_labels[0], int), "Type is not int"
 
-       # matrix(num_of real_clusters x clusters_found)
-        conf_table = np.zeros((len(set(ground_truth)), len(set(clusters_found_labels))))
-        real_clusters_set = set(ground_truth)
+        # matrix(ground_truth x predicted_labels)
+        conf_table = np.zeros((len(set(ground_truth)), len(set(predicted_labels))))
+        real_clust = list(set(ground_truth))
+        # it's needed because ground truth can have discontinuous cluster set
+        clust_to_index = { real_clust[i]: i for i in range(len(real_clust)) }
 
-        realLabel_index_map = {}
-        index = 0
-        for c in real_clusters_set:
-            if not c in realLabel_index_map:
-                realLabel_index_map[c] = index
-                index += 1
-        print(realLabel_index_map)
-
-        for current_clust in realLabel_index_map.values():
-            for i in range(len(clusters_found_labels)):
-                if realLabel_index_map[ground_truth[i]] == current_clust:
-                    cluster_found = clusters_found_labels[i]
-                    conf_table[current_clust, cluster_found] = conf_table[current_clust, cluster_found] + 1
+        for real_clust in clust_to_index.values():
+            for i in range(len(predicted_labels)):
+                if clust_to_index[ground_truth[i]] == real_clust:
+                    cluster_found = predicted_labels[i]
+                    conf_table[real_clust, cluster_found] = conf_table[real_clust, cluster_found] + 1
         return conf_table
 
 
@@ -73,7 +69,7 @@ class Url2Vec:
             stop_words = 'english',
             use_idf = tfidf,
             tokenizer = tokenize_and_stem, # to fix
-            ngram_range = (1,3)
+            ngram_range = (1, 3)
         )
         tfidf_matrix = tfidf_vectorizer.fit_transform(self.pages_content)
         svd = TruncatedSVD(n_components=vecs_length, algorithm="arpack", random_state=1)
@@ -102,5 +98,6 @@ class Url2Vec:
     def test(self, ground_truth, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No train, No test !"
         pred_membership = self.labels_ if pred_membership is None else pred_membership
+        self.ground_truth = ground_truth
 
         return self.__get_confusion_table(ground_truth, pred_membership)

@@ -1,62 +1,27 @@
 import igraph as ig
-"""import plotly.plotly as py
-from plotly.graph_objs import *
-import nltk"""
 from nltk.stem.snowball import SnowballStemmer
 import os
 
-to_dict       = lambda line, sep: get_key_value(split_line(line, sep))
-get_key_value = lambda line_list: {line_list[1].rstrip(): line_list[0]}
-
-
-# -----------------------------------------------------------------------------------------------------------
-
 
 """ Lambdas """
-clean         = lambda string: string.strip()
-split_line    = lambda line, sep: line.split(sep)
-take_part     = lambda num_part, line, sep: clean(split_line(line, sep)[num_part])
-to_tuple      = lambda line, sep: tuple(rem_back_n(split_line(line, sep)))
-rem_back_n    = lambda coll: coll[-1].rstrip() if len(coll) > 0 else coll
-remove_last   = lambda coll: coll[:-1] if len(coll) > 0 else coll
 get_url_index = lambda url_code: int(url_code.replace("u_", ""))
 
 
 """ Functions """
 # returns the url map -> {code: url}
 def get_urlmap(filename, sep=","):
-    return {take_part(1, line, sep): take_part(0, line, sep) for line in open(filename, "r")}
-
-
-def get_urlmap2(filename, sep=","):
     return dict( [s.strip() for s in line.split(sep)[::-1]] for line in open(filename, "r"))
 
 
-
-"""# returns the membership map -> {code: membership} manually clusterized
-def get_membership_map(filename, sep=" , "):
-    return {take_part(1, line, sep): take_part(2, line, sep) for line in open(filename, "r")}"""
-
-
-# returns the tuple list -> (url, code, membership) manually clusterized
-"""def get_sequences_with_membership(filename, sep=" , "):
-    return [(to_tuple(line, sep)) for line in open(filename, "r")]"""
-
 # returns generator of sequences
 def get_sequences(filename, sep=" -1 ", min_len=1):
-    for line in open(filename, "r"):
-        sequence = remove_last(split_line(line, sep))
-        if len(sequence) >= min_len:
-            yield sequence
-
-def get_sequences2(filename, sep=" -1 ", min_len=1):
     for line in open(filename, "r"):
         sequence = line.split(sep)[:-1]
         if len(sequence) >= min_len:
             yield sequence
 
 
-#
+# returns a color
 def get_color(n):
     #        1.orange,   2.white,   3.yellow, 4.lgt-blue, 5.green,  6.blue,    7.fuchsia, 8.violet
     colors = ["#FF8F00", "#FFFFFF", "#FFFF00", "#00E5FF", "#76FF03", "#2979FF", "#F50057", "#9C27B0"]
@@ -97,10 +62,12 @@ def create_graph(sequences, seqMap, is_directed=False):
     return graph
 
 
-
 def graph_from_sequences(sequences, urlmap, is_directed=False, default_color="#2979FF"):
     webgraph = ig.Graph(directed=is_directed)
-    webgraph.add_vertices(len(urlmap))  # adding nodes
+    codes = [int(x) for x in urlmap_nocostraint.keys()]
+    m = max(codes)
+    missing_num = [ str(i) for i in range(m) if str(i) not in urlmap_nocostraint]
+    webgraph.add_vertices(len(urlmap)+len(missing_num))  # adding nodes
 
     for key in urlmap:
         i = int(key)
@@ -119,7 +86,13 @@ def graph_from_sequences(sequences, urlmap, is_directed=False, default_color="#2
 
 def graph_from_file(filename, urlmap, sep="	", is_directed=False, default_color="#2979FF"):
     webgraph = ig.Graph(directed=is_directed)
-    webgraph.add_vertices(len(urlmap))  # adding nodes
+    codes = [int(x) for x in urlmap.keys()]
+    m = max(codes)
+    missing_num = [ str(i) for i in range(m) if str(i) not in urlmap]
+    webgraph.add_vertices(len(urlmap)+len(missing_num))  # adding nodes
+    for i in range(len(missing_num)):
+        webgraph.vs[int(missing_num[i])]["name"] = "missing"
+            webgraph.vs[int(missing_num[i])]["color"] = "000000"
 
     for key in urlmap:
         i = int(key)
@@ -127,15 +100,11 @@ def graph_from_file(filename, urlmap, sep="	", is_directed=False, default_color=
         webgraph.vs[i]["color"] = default_color
 
     for line in open(filename, "r"):
-        edge = tuple( [int(n) for n in line] )
+        edge = tuple( [int(n) for n in line.split(sep)] )
         if webgraph.get_eid(edge[0], edge[1], directed=is_directed, error=False) == -1:
             webgraph.add_edge(edge[0], edge[1])
 
     return webgraph
-
-
-
-
 
 
 """ Document Clustering """
@@ -144,49 +113,49 @@ tokenize          = lambda text: text.split(" ")
 stem              = lambda token, stemmer=SnowballStemmer("english"): stemmer.stem(token)
 tokenize_and_stem = lambda text, stemmer=SnowballStemmer("english"): [stem(token, stemmer) for token in tokenize(text)]
 
+
 # returns the content map -> {code: content} content is a string
 def get_content_map(filename, sep="	"):
-    return {take_part(0, line, sep): take_part(1, line, sep) for line in open(filename)}
+    return dict( [s.strip() for s in line.split(sep)] for line in open(filename) )
 
-def get_content_map2(filename, sep="	"):
-    return dict( line.split(sep) for line in open(filename))
 
 # returns a map of -> {code, tokenized_content} tokenized_content is a list
 def to_tokens_map(content_map):
     return {key: tokenize(content_map[key]) for key in content_map} # very pythonic indeed
+
 
 # returns a map of ->  {code, stemmed_content} stemmed_content is a list
 def to_stems_map(content_map, stemmer=SnowballStemmer("english")):
     #return {key: [stem(token, stemmer) for token in tokenize(content_map[key])] for key in content_map}
     return {key: tokenize_and_stem(content_map[key], stemmer=stemmer) for key in content_map}
 
+
 # merges all the lists in one vocabulary
 def get_set_vocab(tokens_map):
     return set([token for key in tokens_map for token in tokens_map[key]])
 
-# -----------------------------------------------------------------------------------------------------------
 
-class RealMembership:
+# class for retrieving the real membership from a manually pre-generated file
+class GroundTruth:
     filepath = os.path.abspath(os.path.dirname(__file__)) + "/../../dataset/manual-membership/urlToMembership.txt"
 
+    # constructor, needs the file path
     def __init__(self, fpath=filepath, sep=","):
-        utm_map = {}
-        for line in open(fpath, "r"):
-            kv = line.split(sep)
-            utm_map[kv[0]] = kv[1].strip()
-        self.url_membership_map = utm_map
+        self.ground_truth = dict( [s.strip() for s in line.split(sep)] for line in open(fpath) )
 
-    def get_membership(self, url):
+    # returns the real cluster membership of a URL
+    def get_groundtruth(self, url):
         ret = "-1"
         if url.startswith("https"):
             url = url.replace("https", "http")
         if not url.endswith("/"):
             url += "/"
         try:
-            ret = self.url_membership_map[url]
+            ret = self.ground_truth[url]
         except KeyError:
             print("Url not found")
         return ret
 
+
     def get_labelset(self):
-        return set(self.url_membership_map.values())
+        return set(self.ground_truth.values())

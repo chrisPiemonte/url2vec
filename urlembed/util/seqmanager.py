@@ -92,7 +92,7 @@ def graph_from_file(filename, urlmap, sep="	", is_directed=False, default_color=
     webgraph.add_vertices(len(urlmap)+len(missing_num))  # adding nodes
     for i in range(len(missing_num)):
         webgraph.vs[int(missing_num[i])]["name"] = "missing"
-            webgraph.vs[int(missing_num[i])]["color"] = "000000"
+        webgraph.vs[int(missing_num[i])]["color"] = "000000"
 
     for key in urlmap:
         i = int(key)

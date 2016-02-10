@@ -7,8 +7,8 @@ import plotly.graph_objs as go
 
 
 
-def graph3d_plot(graph, graph_name="graph"):
-    py.sign_in('chrispolo', '89nned6csl')
+def graph3d_plot(graph, graph_name="graph", user="chrispolo", api_key="89nned6csl"):
+    py.sign_in(user, api_key)
     layt = graph.layout('kk', dim=3)
 
     Xn = [layt[k][0] for k in range(len(graph.vs))] # x-coordinates of nodes
@@ -102,8 +102,8 @@ def graph3d_plot(graph, graph_name="graph"):
     # py.iplot(fig, filename=graph_name)
 
 
-def scatter_plot(two_dim_vecs, word_labels=None, colors="#FFFF00"):
-    py.sign_in('chrispolo', '89nned6csl')
+def scatter_plot(two_dim_vecs, word_labels=None, colors="#FFFF00", user="chrispolo", api_key="89nned6csl"):
+    py.sign_in(user, api_key)
 
     x_coord = two_dim_vecs[:, 0]
     y_coord = two_dim_vecs[:, 1]

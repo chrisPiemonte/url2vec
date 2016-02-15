@@ -21,8 +21,16 @@ class Url2Vec:
         self.labels_  = None
         self.training = None
         # assume is list-like or fail gracefully
-        self.codeurl_map = codeurl_map if type(codeurl_map) is dict else { str(x): codeurl_map[x] for x in range(len(codeurl_map)) }
-        
+        # self.codeurl_map = codeurl_map if type(codeurl_map) is dict else { str(x): codeurl_map[x] for x in range(len(codeurl_map)) }
+
+        if type(codeurl_map) is dict:
+            self.codeurl_map = codeurl_map
+            self.urls  = [self.codeurl_map[code] for code in self.codeurl_map]
+            self.codes = [code for code in self.codeurl_map]
+        else:
+            self.urls = codeurl_map
+            self.codeurl_map = { str(x): codeurl_map[x] for x in range(len(codeurl_map)) }
+            self.codes = [ str(x) for x in range(len(codeurl_map)) ]
 
 
     # matching matrix
@@ -47,24 +55,36 @@ class Url2Vec:
 
 
     # trains word2vec with the given parameters and returns vectors for each page
-    def __word_embedding(self, sequences_list, sg=0, min_count=1, window=10, negative=5, size=48):
-        assert hasattr(sequences_list, '__iter__'), "Bad sequences argument"
+    def __word_embedding(self, sequences, sg=0, min_count=1, window=10, negative=5, size=48):
+        assert (hasattr(sequences, '__iter__')), "Bad sequences argument"
+        build_seq, train_seq, assert_seq = tee(sequences, 3)
+        first = next((word for sequence in assert_seq for word in sequence if word is not None), None)
+        assert (first is not None), "Empty sequences"
 
         w2v_model = Word2Vec(sg=sg, min_count=min_count, window=window, negative=negative, size=size)
-        build_seq, train_seq = tee(sequences_list)
+        build_seq, train_seq = tee(sequences)
         w2v_model.build_vocab(build_seq)
         w2v_model.train(train_seq)
-        return np.array([w2v_model[code] for code in self.codeurl_map])
+        urlvecs = []
+        if first in set(self.codes):
+            urlvecs = np.array([w2v_model[code] for code in self.codes])
+        elif first in set(self.urls):
+            urlvecs = np.array([w2v_model[self.codeurl_map[code]] for code in self.codeurl_map])
+        else:
+            raise AttributeError("sequences don't match with URLs")
+        return urlvecs
 
 
     # returns tfidf vector for each page
-    def __tfidf(self, codecontent_map, max_df=0.9, max_features=200000, min_df=0.05, dim_red=50, tfidf=True):
-        assert set(codecontent_map.keys()) == set(self.codeurl_map.keys()), "NEIN"
+    def __tfidf(self, contents, max_df=0.9, max_features=200000, min_df=0.05, dim_red=50, tfidf=True):
 
-        self.codecontent_map = codecontent_map
-        self.pages_content = [self.codecontent_map[code] for code in self.codeurl_map]
-        self.codes = [code for code in self.codeurl_map]
-        self.longurls = [self.codeurl_map[code] for code in self.codeurl_map]
+        if type(contents) is dict:
+            assert ( set(contents.keys()) == set(self.codeurl_map.keys()) ), "NEIN"
+            self.contents = contents
+            self.pages_content = [self.contents[code] for code in self.codes]
+        else:
+            self.contents = {str(x): contents[x] for x in range(len(contents))}
+            self.pages_content = [self.contents[code] for code in self.codes]
 
         tfidf_vectorizer = TfidfVectorizer(
             max_df = max_df,
@@ -75,6 +95,7 @@ class Url2Vec:
             tokenizer = tokenize_and_stem, # to fix
             ngram_range = (1, 3)
         )
+
         tfidf_matrix = tfidf_vectorizer.fit_transform(self.pages_content)
         svd = TruncatedSVD(n_components= dim_red, algorithm="arpack", random_state=1)
         return svd.fit_transform(tfidf_matrix)
@@ -82,14 +103,14 @@ class Url2Vec:
 
     # calls the chosen algorithm with the data builded from the input arguments
     def train(self, algorithm=HDBSCAN(min_cluster_size=7), use_w2v=True, use_tfidf=True,
-              e_sg=0, e_min_count=1, e_window=10, e_negative=5, e_size=48, sequences_list=None,
-              d_max_df=0.9, d_max_features=200000, d_min_df=0.05, d_dim_red=50, d_tfidf=True, codecontent_map=None):
+              e_sg=0, e_min_count=1, e_window=10, e_negative=5, e_size=48, sequences=None,
+              d_max_df=0.9, d_max_features=200000, d_min_df=0.05, d_dim_red=50, d_tfidf=True, contents=None):
 
-        assert (use_w2v and sequences_list is not None or use_tfidf and codecontent_map is not None), "Bad arguments!"
+        assert (use_w2v and sequences is not None or use_tfidf and contents is not None), "Bad arguments!"
 
         empty_array = np.array([ [] for i in range(len(self.codeurl_map)) ])
         w2v_vecs    = self.__word_embedding(
-            sequences_list,
+            sequences,
             sg=e_sg,
             min_count=e_min_count,
             window=e_window,
@@ -98,7 +119,7 @@ class Url2Vec:
         ) if use_w2v else empty_array
 
         tfidf_vecs  = self.__tfidf(
-            codecontent_map,
+            contents,
             max_df=d_max_df,
             max_features=d_max_features,
             min_df=d_min_df,

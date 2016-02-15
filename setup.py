@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='url2vec',
-      version='1.5.4',
+      version='1.5.9',
       description='Vector representation for URLs',
       author='Chris Piemonte',
       url='https://github.com/chrisPiemonte/url2vec',

@@ -1,9 +1,9 @@
 from distutils.core import setup
 
-setup(name='urlembed',
-      version='1.5',
+setup(name='url2vec',
+      version='1.5.4',
       description='Vector representation for URLs',
       author='Chris Piemonte',
       url='https://github.com/chrisPiemonte/url2vec',
-      packages=['urlembed.model', 'urlembed.util'],
+      packages=['url2vec.model', 'url2vec.util'],
      )

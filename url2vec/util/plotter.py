@@ -2,9 +2,8 @@ __author__ = 'chris'
 
 import igraph as ig
 import plotly.plotly as py
-from plotly.graph_objs import *
 import plotly.graph_objs as go
-
+from plotly.graph_objs import *
 
 
 def graph3d_plot(graph, graph_name="graph", user="chrispolo", api_key="89nned6csl"):

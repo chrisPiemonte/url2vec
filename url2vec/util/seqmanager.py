@@ -1,6 +1,8 @@
+__author__ = 'chris'
+
+import os
 import igraph as ig
 from nltk.stem.snowball import SnowballStemmer
-import os
 
 
 """ Lambdas """

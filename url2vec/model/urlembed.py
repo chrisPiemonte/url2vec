@@ -22,6 +22,7 @@ class Url2Vec:
         self.training = None
         # assume is list-like or fail gracefully
         self.codeurl_map = codeurl_map if type(codeurl_map) is dict else { str(x): codeurl_map[x] for x in range(len(codeurl_map)) }
+        
 
 
     # matching matrix

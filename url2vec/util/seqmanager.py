@@ -139,7 +139,7 @@ def get_set_vocab(tokens_map):
 
 # class for retrieving the real membership from a manually pre-generated file
 class GroundTruth:
-    filepath = os.path.abspath(os.path.dirname(__file__)) + "/../../dataset/manual-membership/urlToMembership.txt"
+    filepath = os.path.abspath(os.path.dirname(__file__)) + "/../../dataset/ground_truth/urlToMembership.txt"
 
     # constructor, needs the file path
     def __init__(self, fpath=filepath, sep=","):

@@ -144,7 +144,7 @@ class Url2Vec:
         return self.__get_confusion_table(ground_truth, pred_membership)
 
     #
-    def homogeneity_score(ground_truth=None, pred_membership=None):
+    def homogeneity_score(self, ground_truth=None, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
         assert (ground_truth is not None or self.ground_truth is not None), "Ground Truth not given"
 
@@ -154,7 +154,7 @@ class Url2Vec:
         return metrics.homogeneity_score(ground_truth, pred_membership)
 
     #
-    def completeness_score(ground_truth=None, pred_membership=None):
+    def completeness_score(self, ground_truth=None, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
         assert (ground_truth is not None or self.ground_truth is not None), "Ground Truth not given"
 
@@ -164,7 +164,7 @@ class Url2Vec:
         return metrics.completeness_score(ground_truth, pred_membership)
 
     #
-    def v_measure_score(ground_truth=None, pred_membership=None):
+    def v_measure_score(self, ground_truth=None, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
         assert (ground_truth is not None or self.ground_truth is not None), "Ground Truth not given"
 
@@ -174,7 +174,7 @@ class Url2Vec:
         return metrics.v_measure_score(ground_truth, pred_membership)
 
     #
-    def adjusted_rand_score(ground_truth=None, pred_membership=None):
+    def adjusted_rand_score(self, ground_truth=None, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
         assert (ground_truth is not None or self.ground_truth is not None), "Ground Truth not given"
 
@@ -184,7 +184,7 @@ class Url2Vec:
         return metrics.adjusted_rand_score(ground_truth, pred_membership)
 
     #
-    def adjusted_mutual_info_score(ground_truth=None, pred_membership=None):
+    def adjusted_mutual_info_score(self, ground_truth=None, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
         assert (ground_truth is not None or self.ground_truth is not None), "Ground Truth not given"
 
@@ -194,7 +194,7 @@ class Url2Vec:
         return metrics.adjusted_mutual_info_score(ground_truth, pred_membership)
 
     #
-    def silhouette_score(pred_membership=None):
+    def silhouette_score(self, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
         assert (self.training is not None), "No training yet !"
 

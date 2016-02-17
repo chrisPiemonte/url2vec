@@ -9,8 +9,9 @@ from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
 from gensim.models import Word2Vec
 
+from url2vec.util.plotter import scatter_plot
 from sklearn.decomposition import TruncatedSVD
-from url2vec.util.seqmanager import tokenize_and_stem
+from url2vec.util.seqmanager import tokenize_and_stem, get_color
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 class Url2Vec:
@@ -58,7 +59,7 @@ class Url2Vec:
     def __word_embedding(self, sequences, sg=0, min_count=1, window=10, negative=5, size=48):
         assert (hasattr(sequences, '__iter__')), "Bad sequences argument"
         build_seq, train_seq, assert_seq = tee(sequences, 3)
-        first = next((word for sequence in assert_seq for word in sequence if word is not None), None)
+        first = next( (word for sequence in assert_seq for word in sequence if word is not None), None)
         assert (first is not None), "Empty sequences"
 
         w2v_model = Word2Vec(sg=sg, min_count=min_count, window=window, negative=negative, size=size)
@@ -199,6 +200,27 @@ class Url2Vec:
         assert (self.training is not None), "No training yet !"
 
         pred_membership = self.labels_ if pred_membership is None else pred_membership
-        ground_truth = self.ground_truth if ground_truth is None else ground_truth
 
-        return metrics.silhouette_score(self.training, pred_membership, metric='euclidean')
+        return metrics.silhouette_score(np.array(self.training), np.array(pred_membership), metric='euclidean')
+
+
+    def two_dim(self, high_dim_vecs=None):
+        assert (high_dim_vecs is not None or self.training is not None), "No prediction yet !"
+        high_dim_vecs = self.training if high_dim_vecs is None else high_dim_vecs
+        tsne = TSNE(n_components=2)
+
+        self.twodim = tsne.fit_transform(high_dim_vecs)
+
+        return self.twodim
+
+
+    def plot_trace(self, twodim=None, urls=None, pred_membership=None, user="chrispolo", api_key="89nned6csl"):
+        assert (twodim is not None or self.twodim is not None), "No twodim vectors !"
+        assert (urls is not None or self.urls is not None), "No urls !"
+        assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
+
+        twodim = self.twodim if twodim is None else twodim
+        urls = self.urls if urls is None else urls
+        pred_membership = self.labels_ if pred_membership is None else pred_membership
+
+        return scatter_plot(twodim, urls, [get_color(clust) for clust in pred_membership], user, api_key)

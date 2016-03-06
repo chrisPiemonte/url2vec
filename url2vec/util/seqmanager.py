@@ -152,6 +152,8 @@ class GroundTruth:
             url = url.replace("https", "http")
         if not url.endswith("/"):
             url += "/"
+        if url.startswith("http://www."):
+            url = url.replace("http://www.", "http://")
         try:
             ret = self.ground_truth[url]
         except KeyError:

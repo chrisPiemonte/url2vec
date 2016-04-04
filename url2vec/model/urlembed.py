@@ -21,8 +21,6 @@ class Url2Vec:
         # assert (type(codeurl_map) is dict), "url2vec needs a map that associates a code(e.g. a number) for each URL"
         self.labels_  = None
         self.training = None
-        # assume is list-like or fail gracefully
-        # self.codeurl_map = codeurl_map if type(codeurl_map) is dict else { str(x): codeurl_map[x] for x in range(len(codeurl_map)) }
 
         if type(codeurl_map) is dict:
             self.codeurl_map = codeurl_map
@@ -144,7 +142,7 @@ class Url2Vec:
 
         return self.__get_confusion_table(ground_truth, pred_membership)
 
-    #
+    # homogeneity score
     def homogeneity_score(self, ground_truth=None, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
         assert (ground_truth is not None or self.ground_truth is not None), "Ground Truth not given"
@@ -154,7 +152,7 @@ class Url2Vec:
 
         return metrics.homogeneity_score(ground_truth, pred_membership)
 
-    #
+    # completeness score
     def completeness_score(self, ground_truth=None, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
         assert (ground_truth is not None or self.ground_truth is not None), "Ground Truth not given"
@@ -164,7 +162,7 @@ class Url2Vec:
 
         return metrics.completeness_score(ground_truth, pred_membership)
 
-    #
+    # v-measure score
     def v_measure_score(self, ground_truth=None, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
         assert (ground_truth is not None or self.ground_truth is not None), "Ground Truth not given"
@@ -174,7 +172,7 @@ class Url2Vec:
 
         return metrics.v_measure_score(ground_truth, pred_membership)
 
-    #
+    # adjusted rand score
     def adjusted_rand_score(self, ground_truth=None, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
         assert (ground_truth is not None or self.ground_truth is not None), "Ground Truth not given"
@@ -184,7 +182,7 @@ class Url2Vec:
 
         return metrics.adjusted_rand_score(ground_truth, pred_membership)
 
-    #
+    # adjusted mutual information
     def adjusted_mutual_info_score(self, ground_truth=None, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
         assert (ground_truth is not None or self.ground_truth is not None), "Ground Truth not given"
@@ -194,7 +192,7 @@ class Url2Vec:
 
         return metrics.adjusted_mutual_info_score(ground_truth, pred_membership)
 
-    #
+    # silhouette score
     def silhouette_score(self, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
         assert (self.training is not None), "No training yet !"
@@ -203,7 +201,7 @@ class Url2Vec:
 
         return metrics.silhouette_score(np.array(self.training), np.array(pred_membership), metric='euclidean')
 
-
+    # uses t-SNE for dimensionality redustion
     def two_dim(self, high_dim_vecs=None):
         assert (high_dim_vecs is not None or self.training is not None), "No prediction yet !"
         high_dim_vecs = self.training if high_dim_vecs is None else high_dim_vecs
@@ -213,7 +211,7 @@ class Url2Vec:
 
         return self.twodim
 
-
+    # plots data
     def plot_trace(self, twodim=None, urls=None, pred_membership=None, user="chrispolo", api_key="89nned6csl"):
         assert (twodim is not None or self.twodim is not None), "No twodim vectors !"
         assert (urls is not None or self.urls is not None), "No urls !"

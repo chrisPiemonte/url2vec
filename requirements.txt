@@ -7,3 +7,4 @@ python-igraph
 plotly
 gensim
 hdbscan
+scrapy

@@ -8,4 +8,6 @@ url2vec/model/*.pyc
 dataset/depth-100k
 dataset/depth-500k
 dataset/depth-1M
+url2vec_crawler/*.pyc
+url2vec_crawler/spiders/*.pyc
 build

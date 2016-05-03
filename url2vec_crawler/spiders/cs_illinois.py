@@ -10,17 +10,19 @@ from url2vec_crawler.items import PageItem, LinkItem
 class CsIllinoisSpider(CrawlSpider):
     name = 'cs_illinois'
     allowed_domains = ['cs.illinois.edu']
-    denied_domains = ["my.cs.illinois.edu"]
+    denied_domains = ["my.cs.illinois.edu", "slazebni.cs.illinois.edu"]
     start_urls = ['http://www.cs.illinois.edu/']
 
     def __init__(self, *args, **kwargs):
         super(CsIllinoisSpider, self).__init__( *args, **kwargs)
         self.crawled_urls = {}
         self.link_extractor = LinkExtractor(
-                                deny=(r'/news', r'/buy', r'/login', r'Login', r'/index.php'),
-                                allow_domains=self.allowed_domains,
-                                deny_extensions=IGNORED_EXTENSIONS,
-                                deny_domains=self.denied_domains, unique=True)
+            deny=(r'/news', r'/buy', r'/login', r'Login', r'/index.php'),
+            allow=(r'^(http://|https://)?(www.)?(cs.illinois.edu)'),
+            allow_domains=self.allowed_domains,
+            deny_extensions=IGNORED_EXTENSIONS,
+            deny_domains=self.denied_domains, unique=True
+        )
 
     def parse(self, response):
         self.logger.info('parsing url %s', response.url)

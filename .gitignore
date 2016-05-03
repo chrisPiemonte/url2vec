@@ -11,3 +11,4 @@ dataset/depth-1M
 url2vec_crawler/*.pyc
 url2vec_crawler/spiders/*.pyc
 build
+.scrapy

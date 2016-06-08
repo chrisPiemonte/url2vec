@@ -10,26 +10,47 @@ from sklearn.cluster import KMeans
 from gensim.models import Word2Vec
 
 from url2vec.util.plotter import scatter_plot
+from url2vec.util.seqmanager import get_color
+from nltk.stem.snowball import SnowballStemmer
 from sklearn.decomposition import TruncatedSVD
-from url2vec.util.seqmanager import tokenize_and_stem, get_color
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 class Url2Vec:
 
     # Constructor
-    def __init__ (self, codeurl_map):
-        # assert (type(codeurl_map) is dict), "url2vec needs a map that associates a code(e.g. a number) for each URL"
-        self.labels_  = None
-        self.training = None
+    #def __init__ (self, codeurl_map):
+    def __init__(self,
+        use_embedding=True, sg=0, min_count=1, window=10, negative=5, size=48,
+        use_text=True, max_df=0.9, max_features=200000, min_df=0.05, dim_red=100, tfidf=True):
 
-        if type(codeurl_map) is dict:
-            self.codeurl_map = codeurl_map
-            self.urls  = [self.codeurl_map[code] for code in self.codeurl_map]
-            self.codes = [code for code in self.codeurl_map]
-        else:
-            self.urls = codeurl_map
-            self.codeurl_map = { str(x): codeurl_map[x] for x in range(len(codeurl_map)) }
-            self.codes = [ str(x) for x in range(len(codeurl_map)) ]
+        # embedding params
+        self.use_embedding = use_embedding
+        self.sg            = sg
+        self.min_count     = min_count
+        self.window        = window
+        self.negative      = negative
+        self.size          = size
+
+        # text params
+        self.use_text     = use_text
+        self.max_df       = max_df
+        self.max_features = max_features
+        self.min_df       = min_df
+        self.dim_red      = dim_red
+        self.tfidf        = tfidf
+
+        # assert (type(codeurl_map) is dict), "url2vec needs a map that associates a code(e.g. a number) for each URL"
+        # self.labels_  = None
+        # self.training = None
+        #
+        # if type(codeurl_map) is dict:
+        #     self.codeurl_map = codeurl_map
+        #     self.urls  = [self.codeurl_map[code] for code in self.codeurl_map]
+        #     self.codes = [code for code in self.codeurl_map]
+        # else:
+        #     self.urls = codeurl_map
+        #     self.codeurl_map = { str(x): codeurl_map[x] for x in range(len(codeurl_map)) }
+        #     self.codes = [ str(x) for x in range(len(codeurl_map)) ]
 
 
     # matching matrix
@@ -54,86 +75,87 @@ class Url2Vec:
 
 
     # trains word2vec with the given parameters and returns vectors for each page
-    def __word_embedding(self, sequences, sg=0, min_count=1, window=10, negative=5, size=48):
-        assert (hasattr(sequences, '__iter__')), "Bad sequences argument"
-        build_seq, train_seq, assert_seq = tee(sequences, 3)
-        first = next( (word for sequence in assert_seq for word in sequence if word is not None), None)
-        assert (first is not None), "Empty sequences"
-
-        w2v_model = Word2Vec(sg=sg, min_count=min_count, window=window, negative=negative, size=size)
+    def __word_embedding(self, sequences):
+        # assert (hasattr(sequences, '__iter__')), "Bad sequences argument"
+        # build_seq, train_seq, assert_seq = tee(sequences, 3)
+        # first = next( (word for sequence in assert_seq for word in sequence if word is not None), None)
+        # assert (first is not None), "Empty sequences"
+        word2vec = Word2Vec(
+            sg        = self.sg,
+            min_count = self.min_count,
+            window    = self.window,
+            negative  = self.negative
+            # size      = self.size
+        )
         build_seq, train_seq = tee(sequences)
-        w2v_model.build_vocab(build_seq)
-        w2v_model.train(train_seq)
-        urlvecs = []
-        if first in set(self.codes):
-            urlvecs = np.array([w2v_model[code] for code in self.codes])
-        elif first in set(self.urls):
-            urlvecs = np.array([w2v_model[self.codeurl_map[code]] for code in self.codeurl_map])
-        else:
-            raise AttributeError("sequences don't match with URLs")
-        return urlvecs
+        word2vec.build_vocab(build_seq)
+        word2vec.train(train_seq)
+        # urlvecs = []
+        # if first in set(self.codes):
+        #     urlvecs = np.array([w2v_model[code] for code in self.codes])
+        # elif first in set(self.urls):
+        #     urlvecs = np.array([w2v_model[self.codeurl_map[code]] for code in self.codeurl_map])
+        # else:
+        #     raise AttributeError("sequences don't match with URLs")
+        return {url: word2vec[url] for url in word2vec.vocab}
 
 
     # returns tfidf vector for each page
-    def __tfidf(self, contents, max_df=0.9, max_features=200000, min_df=0.05, dim_red=50, tfidf=True):
-
-        if type(contents) is dict:
-            assert ( set(contents.keys()) == set(self.codeurl_map.keys()) ), "NEIN"
-            self.contents = contents
-            self.pages_content = [self.contents[code] for code in self.codes]
-        else:
-            self.contents = {str(x): contents[x] for x in range(len(contents))}
-            self.pages_content = [self.contents[code] for code in self.codes]
-
+    # documents must be a map
+    def __vsm(self, documents, sep=" "):
+        tokenize = lambda text: text.split(sep)
+        stem = lambda token, stemmer=SnowballStemmer("english"): stemmer.stem(token)
+        tokenize_and_stem = lambda text: [stem(token) for token in tokenize(text)]
+        urls  = documents.keys()
+        texts = documents.values()
+        # if type(contents) is dict:
+        #     assert ( set(contents.keys()) == set(self.codeurl_map.keys()) ), "NEIN"
+        #     self.contents = contents
+        #     self.pages_content = [self.contents[code] for code in self.codes]
+        # else:
+        #     self.contents = {str(x): contents[x] for x in range(len(contents))}
+        #     self.pages_content = [self.contents[code] for code in self.codes]
         tfidf_vectorizer = TfidfVectorizer(
-            max_df = max_df,
-            max_features = max_features,
-            min_df = min_df,
-            stop_words = 'english',
-            use_idf = tfidf,
-            tokenizer = tokenize_and_stem, # to fix
-            ngram_range = (1, 3)
+            max_df       = self.max_df,
+            max_features = self.max_features,
+            min_df       = self.min_df,
+            stop_words   = 'english',
+            use_idf      = self.tfidf,
+            tokenizer    = tokenize_and_stem, # to fix
+            ngram_range  = (1, 2)
         )
-
-        tfidf_matrix = tfidf_vectorizer.fit_transform(self.pages_content)
-        svd = TruncatedSVD(n_components= dim_red, algorithm="arpack", random_state=1)
-        return svd.fit_transform(tfidf_matrix)
+        svd = TruncatedSVD(n_components= self.dim_red, algorithm="arpack", random_state=1)
+        # return svd.fit_transform(dt_matrix)
+        # return dt_matrix.todense().tolist()
+        dt_matrix = tfidf_vectorizer.fit_transform(texts)
+        # dt_dense = dt_matrix.todense().tolist()
+        dt_truncated = svd.fit_transform(dt_matrix)
+        return {urls[i]: dt_truncated[i] for i in range(len(urls))}
 
 
     # calls the chosen algorithm with the data builded from the input arguments
-    def train(self, algorithm=HDBSCAN(min_cluster_size=7), use_w2v=True, use_tfidf=True,
-              e_sg=0, e_min_count=1, e_window=10, e_negative=5, e_size=48, sequences=None,
-              d_max_df=0.9, d_max_features=200000, d_min_df=0.05, d_dim_red=50, d_tfidf=True, contents=None):
+    # documents passed must be a map, to join the embedding to the proper tf-idf vector
+    def fit_predict(self, algorithm=HDBSCAN(min_cluster_size=7), walks=None, documents=None):
+        # assert (use_w2v and sequences is not None or use_tfidf and contents is not None), "Bad arguments!"
+        empty_map = { url: [] for url in documents }
 
-        assert (use_w2v and sequences is not None or use_tfidf and contents is not None), "Bad arguments!"
+        embedding_vecs = self.__word_embedding(walks) if self.use_embedding else empty_map
+        pages_vecs     = self.__vsm(documents) if self.use_text else empty_map
 
-        empty_array = np.array([ [] for i in range(len(self.codeurl_map)) ])
-        w2v_vecs    = self.__word_embedding(
-            sequences,
-            sg=e_sg,
-            min_count=e_min_count,
-            window=e_window,
-            negative=e_negative,
-            size=e_size
-        ) if use_w2v else empty_array
+        print(len(embedding_vecs['10']))
+        print(len(pages_vecs['10']))
 
-        tfidf_vecs  = self.__tfidf(
-            contents,
-            max_df=d_max_df,
-            max_features=d_max_features,
-            min_df=d_min_df,
-            dim_red=d_dim_red,
-            tfidf=d_tfidf
-        ) if use_tfidf else empty_array
-
-        self.training = [ np.append(w2v_vecs[i], tfidf_vecs[i]) for i in range(len(self.codeurl_map)) ]
+        #self.train   = [ np.append(embedding_vecs[i], pages_vecs[i]) for i in range(len(embedding_vecs)) ]
+        self.urls = [url for url in embedding_vecs]
+        # iterate over documents or over embedding_vecs (because there may be fewer elements in embedding_vecs)
+        self.training = [np.append(embedding_vecs[url], pages_vecs[url]) for url in embedding_vecs]
         self.labels_ = algorithm.fit_predict(self.training)
         self.labels_ = [int(x) for x in self.labels_]
         return self.labels_
 
 
     # needs the real membership (ground truth) and the membership returned by the algorithm (pred_membership)
-    # ...(already given if train was successful)
+    # ...(already given if the fit_predict was successful)
     # returns the confusion matrix
     def test(self, ground_truth, pred_membership=None):
         assert (pred_membership is not None or self.labels_ is not None), "No train, No test !"
@@ -213,11 +235,11 @@ class Url2Vec:
 
     # plots data
     def plot_trace(self, twodim=None, urls=None, pred_membership=None, user="chrispolo", api_key="89nned6csl"):
-        assert (twodim is not None or self.twodim is not None), "No twodim vectors !"
-        assert (urls is not None or self.urls is not None), "No urls !"
-        assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
+        # assert (twodim is not None or self.twodim is not None), "No twodim vectors !"
+        # assert (urls is not None or self.urls is not None), "No urls !"
+        # assert (pred_membership is not None or self.labels_ is not None), "No prediction yet !"
 
-        twodim = self.twodim if twodim is None else twodim
+        twodim = self.two_dim(high_dim_vecs=self.training) if twodim is None else twodim
         urls = self.urls if urls is None else urls
         pred_membership = self.labels_ if pred_membership is None else pred_membership
 

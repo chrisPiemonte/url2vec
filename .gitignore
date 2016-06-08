@@ -12,3 +12,5 @@ url2vec_crawler/*.pyc
 url2vec_crawler/spiders/*.pyc
 build
 .scrapy
+.DS_Store
+dataset/.DS_Store

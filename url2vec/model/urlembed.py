@@ -5,6 +5,7 @@ from itertools import tee
 
 from sklearn import metrics
 from hdbscan import HDBSCAN
+from sklearn import preprocessing
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
 from gensim.models import Word2Vec
@@ -20,7 +21,7 @@ class Url2Vec:
     # Constructor
     #def __init__ (self, codeurl_map):
     def __init__(self,
-        use_embedding=True, sg=0, min_count=1, window=10, negative=5, size=48,
+        use_embedding=True, sg=0, min_count=1, window=10, negative=5, size=48, normalize=True,
         use_text=True, max_df=0.9, max_features=200000, min_df=0.05, dim_red=100, tfidf=True):
 
         # embedding params
@@ -30,6 +31,7 @@ class Url2Vec:
         self.window        = window
         self.negative      = negative
         self.size          = size
+        self.normalize     = normalize
 
         # text params
         self.use_text     = use_text
@@ -142,13 +144,20 @@ class Url2Vec:
         embedding_vecs = self.__word_embedding(walks) if self.use_embedding else empty_map
         pages_vecs     = self.__vsm(documents) if self.use_text else empty_map
 
-        print(len(embedding_vecs['10']))
-        print(len(pages_vecs['10']))
+        # normalize embedding vecs with min-max scaler
+        # embedding_vecs is a damned dictionary
+        if self.normalize:
+            values = embedding_vecs.values()
+            keys   = embedding_vecs.keys()
+            min_max_scaler = preprocessing.MinMaxScaler()
+            values_scaled  = min_max_scaler.fit_transform(values)
+            embedding_vecs = {keys[i]: values_scaled[i] for i in range(len(keys))}
 
-        #self.train   = [ np.append(embedding_vecs[i], pages_vecs[i]) for i in range(len(embedding_vecs)) ]
-        self.urls = [url for url in embedding_vecs]
+        # self.train   = [ np.append(embedding_vecs[i], pages_vecs[i]) for i in range(len(embedding_vecs)) ]
+        # self.urls = [url for url in embedding_vecs]
+        self.urls = embedding_vecs.keys() if self.use_embedding else documents.keys()
         # iterate over documents or over embedding_vecs (because there may be fewer elements in embedding_vecs)
-        self.training = [np.append(embedding_vecs[url], pages_vecs[url]) for url in embedding_vecs]
+        self.training = [np.append(embedding_vecs[url], pages_vecs[url]) for url in self.urls]
         self.labels_ = algorithm.fit_predict(self.training)
         self.labels_ = [int(x) for x in self.labels_]
         return self.labels_

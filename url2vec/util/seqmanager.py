@@ -146,8 +146,9 @@ class GroundTruth:
         self.ground_truth = dict( [s.strip() for s in line.split(sep)] for line in open(fpath) )
 
     # returns the real cluster membership of a URL
-    def get_groundtruth(self, url):
+    def get_groundtruth(self, url, print_missing=False):
         ret = "-1"
+        original_url = url
         if url.startswith("https"):
             url = url.replace("https", "http")
         if not url.endswith("/"):
@@ -157,7 +158,8 @@ class GroundTruth:
         try:
             ret = self.ground_truth[url]
         except KeyError:
-            print("Url not found")
+            if print_missing:
+                print("Url not found -", url, "-", original_url)
         return ret
 
 
